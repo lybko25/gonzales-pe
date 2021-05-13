@@ -9,7 +9,7 @@ printf "\n\
  Generating tests\n\
 ------------------"
 
-syntaxes=${@:-css less sass scss}
+syntaxes=${@:-css less sass scss jss}
 failed_tests=()
 
 for syntax in $syntaxes; do

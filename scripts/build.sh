@@ -4,7 +4,7 @@ rm -rf lib
 mkdir -p lib
 
 if [ $# -eq 0 ]; then
-  syntaxes="css less sass scss"
+  syntaxes="css less sass scss jss"
 else
   syntaxes=$@
 fi

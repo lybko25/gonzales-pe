@@ -46,7 +46,7 @@ printf "\n\
 if [ $# -eq 0 ]; then
   ./scripts/lint.sh
   run_all_tests
-  syntaxes="css less sass scss"
+  syntaxes="css less sass scss jss"
 else
   syntaxes=$@
 fi
