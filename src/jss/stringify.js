@@ -59,7 +59,7 @@ module.exports = function stringify(tree) {
       return "#{" + _composite(t.content) + "}";
     },
     interpolationJs: function (t) {
-      return "${" + _composite(t.content) + "}";
+      return t.content;
     },
     multilineComment: function (t) {
       return "/*" + t.content + "*/";

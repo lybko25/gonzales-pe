@@ -4,7 +4,18 @@
  * Make sure to change `syntax` variable too, if needed.
  */
 const prop = 1;
-var css = "color:${prop => prop};${props=> props && 'background: white;'}";
+var css = `
+background: \${props.background};
+border-radius: 3px;
+
+
+\${(props) =>
+  props.primary &&
+  css\'
+    background: palevioletred;
+    color: white;
+  \'}
+  `;
 var css1 = css.toString();
 var syntax = "jss";
 var gonzales = require("./../");

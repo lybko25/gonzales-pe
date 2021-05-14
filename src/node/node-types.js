@@ -9,6 +9,8 @@ module.exports = {
   AttributeFlagsType: "attributeFlags",
   AttributeMatchType: "attributeMatch",
   AttributeValueType: "attributeValue",
+  BacktickType: "backtick",
+  FullStopType: "fullStop",
   BlockType: "block",
   BracketsType: "brackets",
   ClassType: "class",

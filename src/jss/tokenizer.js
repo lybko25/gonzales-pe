@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-module.exports = function(css, tabSize) {
-  var TokenType = require('../token-types');
+module.exports = function (css, tabSize) {
+  var TokenType = require("../token-types");
 
   let tokens = [];
   let urlMode = false;
@@ -13,43 +13,43 @@ module.exports = function(css, tabSize) {
   let col = 1;
 
   var Punctuation = {
-    ' ': TokenType.Space,
-    '\n': TokenType.Newline,
-    '\r': TokenType.Newline,
-    '\t': TokenType.Tab,
-    '!': TokenType.ExclamationMark,
+    " ": TokenType.Space,
+    "\n": TokenType.Newline,
+    "\r": TokenType.Newline,
+    "\t": TokenType.Tab,
+    "!": TokenType.ExclamationMark,
     '"': TokenType.QuotationMark,
-    '#': TokenType.NumberSign,
-    '$': TokenType.DollarSign,
-    '%': TokenType.PercentSign,
-    '&': TokenType.Ampersand,
-    '\'': TokenType.Apostrophe,
-    '(': TokenType.LeftParenthesis,
-    ')': TokenType.RightParenthesis,
-    '*': TokenType.Asterisk,
-    '+': TokenType.PlusSign,
-    ',': TokenType.Comma,
-    '-': TokenType.HyphenMinus,
-    '.': TokenType.FullStop,
-    '/': TokenType.Solidus,
-    ':': TokenType.Colon,
-    ';': TokenType.Semicolon,
-    '<': TokenType.LessThanSign,
-    '=': TokenType.EqualsSign,
-    '==': TokenType.EqualitySign,
-    '!=': TokenType.InequalitySign,
-    '>': TokenType.GreaterThanSign,
-    '?': TokenType.QuestionMark,
-    '@': TokenType.CommercialAt,
-    '[': TokenType.LeftSquareBracket,
-    ']': TokenType.RightSquareBracket,
-    '^': TokenType.CircumflexAccent,
-    '_': TokenType.LowLine,
-    '{': TokenType.LeftCurlyBracket,
-    '|': TokenType.VerticalLine,
-    '}': TokenType.RightCurlyBracket,
-    '~': TokenType.Tilde,
-    '`': TokenType.Backtick
+    "#": TokenType.NumberSign,
+    $: TokenType.DollarSign,
+    "%": TokenType.PercentSign,
+    "&": TokenType.Ampersand,
+    "'": TokenType.Apostrophe,
+    "(": TokenType.LeftParenthesis,
+    ")": TokenType.RightParenthesis,
+    "*": TokenType.Asterisk,
+    "+": TokenType.PlusSign,
+    ",": TokenType.Comma,
+    "-": TokenType.HyphenMinus,
+    ".": TokenType.FullStop,
+    "/": TokenType.Solidus,
+    ":": TokenType.Colon,
+    ";": TokenType.Semicolon,
+    "<": TokenType.LessThanSign,
+    "=": TokenType.EqualsSign,
+    "==": TokenType.EqualitySign,
+    "!=": TokenType.InequalitySign,
+    ">": TokenType.GreaterThanSign,
+    "?": TokenType.QuestionMark,
+    "@": TokenType.CommercialAt,
+    "[": TokenType.LeftSquareBracket,
+    "]": TokenType.RightSquareBracket,
+    "^": TokenType.CircumflexAccent,
+    _: TokenType.LowLine,
+    "{": TokenType.LeftCurlyBracket,
+    "|": TokenType.VerticalLine,
+    "}": TokenType.RightCurlyBracket,
+    "~": TokenType.Tilde,
+    "`": TokenType.Backtick,
   };
 
   /**
@@ -63,7 +63,7 @@ module.exports = function(css, tabSize) {
       ln: ln,
       col: column,
       type: type,
-      value: value
+      value: value,
     });
   }
 
@@ -73,7 +73,20 @@ module.exports = function(css, tabSize) {
    * @returns {boolean}
    */
   function isDecimalDigit(c) {
-    return '0123456789'.indexOf(c) >= 0;
+    return "0123456789".indexOf(c) >= 0;
+  }
+
+  function parseInterpolationJs(css) {
+    var start = pos;
+    var counter = 1;
+    pos += 2;
+    for (; pos < css.length; pos++) {
+      if (css.charAt(pos) === "{") counter += 1;
+      else if (css.charAt(pos) === "}") counter -= 1;
+      if (counter === 0) break;
+    }
+    pushToken(TokenType.InterpolationJs, css.substring(start, pos + 1), col);
+    col += pos - start;
   }
 
   /**
@@ -85,7 +98,7 @@ module.exports = function(css, tabSize) {
 
     // Read the string until we meet a non-space character:
     for (; pos < css.length; pos++) {
-      if (css.charAt(pos) !== ' ') break;
+      if (css.charAt(pos) !== " ") break;
     }
 
     // Add a substring containing only spaces to tokens:
@@ -104,7 +117,7 @@ module.exports = function(css, tabSize) {
     // Read the string until we meet a matching quote:
     for (pos++; pos < css.length; pos++) {
       // Skip escaped quotes:
-      if (css.charAt(pos) === '\\') pos++;
+      if (css.charAt(pos) === "\\") pos++;
       else if (css.charAt(pos) === q) break;
     }
 
@@ -139,19 +152,19 @@ module.exports = function(css, tabSize) {
     var start = pos;
 
     // Skip all opening slashes:
-    while (css.charAt(pos) === '/') pos++;
+    while (css.charAt(pos) === "/") pos++;
 
     // Read the string until we meet a punctuation mark:
     for (; pos < css.length; pos++) {
       // Skip all '\':
-      if (css.charAt(pos) === '\\') pos++;
+      if (css.charAt(pos) === "\\") pos++;
       else if (css.charAt(pos) in Punctuation) break;
     }
 
     var ident = css.substring(start, pos--);
 
     // Enter url mode if parsed substring is `url`:
-    if (!urlMode && ident === 'url' && css.charAt(pos + 1) === '(') {
+    if (!urlMode && ident === "url" && css.charAt(pos + 1) === "(") {
       urlMode = true;
     }
 
@@ -164,7 +177,7 @@ module.exports = function(css, tabSize) {
    * Parse equality sign
    */
   function parseEquality() {
-    pushToken(TokenType.EqualitySign, '==', col);
+    pushToken(TokenType.EqualitySign, "==", col);
     pos++;
     col++;
   }
@@ -173,16 +186,15 @@ module.exports = function(css, tabSize) {
    * Parse inequality sign
    */
   function parseInequality() {
-    pushToken(TokenType.InequalitySign, '!=', col);
+    pushToken(TokenType.InequalitySign, "!=", col);
     pos++;
     col++;
   }
 
-
   /**
-  * Parse a multiline comment
-  * @param {string} css Unparsed part of CSS string
-  */
+   * Parse a multiline comment
+   * @param {string} css Unparsed part of CSS string
+   */
   function parseMLComment(css) {
     var start = pos;
 
@@ -190,7 +202,7 @@ module.exports = function(css, tabSize) {
     // Since we already know first 2 characters (`/*`), start reading
     // from `pos + 2`:
     for (pos += 2; pos < css.length; pos++) {
-      if (css.charAt(pos) === '*' && css.charAt(pos + 1) === '/') {
+      if (css.charAt(pos) === "*" && css.charAt(pos + 1) === "/") {
         pos++;
         break;
       }
@@ -200,19 +212,19 @@ module.exports = function(css, tabSize) {
     var comment = css.substring(start, pos + 1);
     pushToken(TokenType.CommentML, comment, col);
 
-    var newlines = comment.split('\n');
+    var newlines = comment.split("\n");
     if (newlines.length > 1) {
       ln += newlines.length - 1;
       col = newlines[newlines.length - 1].length;
     } else {
-      col += (pos - start);
+      col += pos - start;
     }
   }
 
   /**
-  * Parse a single line comment
-  * @param {string} css Unparsed part of CSS string
-  */
+   * Parse a single line comment
+   * @param {string} css Unparsed part of CSS string
+   */
   function parseSLComment(css) {
     var start = pos;
 
@@ -220,7 +232,7 @@ module.exports = function(css, tabSize) {
     // Since we already know first 2 characters (`//`), start reading
     // from `pos + 2`:
     for (pos += 2; pos < css.length; pos++) {
-      if (css.charAt(pos) === '\n' || css.charAt(pos) === '\r') {
+      if (css.charAt(pos) === "\n" || css.charAt(pos) === "\r") {
         break;
       }
     }
@@ -242,14 +254,17 @@ module.exports = function(css, tabSize) {
       c = css.charAt(pos);
       cn = css.charAt(pos + 1);
 
+      if (c === "$" && cn === "{") {
+        parseInterpolationJs(css);
+      }
       // If we meet `/*`, it's a start of a multiline comment.
       // Parse following characters as a multiline comment:
-      if (c === '/' && cn === '*') {
+      else if (c === "/" && cn === "*") {
         parseMLComment(css);
       }
 
       // If we meet `//` and it is not a part of url:
-      else if (!urlMode && c === '/' && cn === '/') {
+      else if (!urlMode && c === "/" && cn === "/") {
         // If we're currently inside a block, treat `//` as a start
         // of identifier. Else treat `//` as a start of a single-line
         // comment:
@@ -263,32 +278,32 @@ module.exports = function(css, tabSize) {
       }
 
       // If current character is a space:
-      else if (c === ' ') {
+      else if (c === " ") {
         parseSpaces(css);
       }
 
       // If current character is `=`, it must be combined with next `=`
-      else if (c === '=' && cn === '=') {
+      else if (c === "=" && cn === "=") {
         parseEquality(css);
       }
 
       // If we meet `!=`, this must be inequality
-      else if (c === '!' && cn === '=') {
+      else if (c === "!" && cn === "=") {
         parseInequality(css);
       }
 
       // If current character is a punctuation mark:
       else if (c in Punctuation) {
         // Check for CRLF here or just LF
-        if (c === '\r' && cn === '\n' || c === '\n') {
+        if ((c === "\r" && cn === "\n") || c === "\n") {
           // If \r we know the next character is \n due to statement above
           // so we push a CRLF token type to the token list and importantly
           // skip the next character so as not to double count newlines or
           // columns etc
-          if (c === '\r') {
-            pushToken(TokenType.Newline, '\r\n', col);
+          if (c === "\r") {
+            pushToken(TokenType.Newline, "\r\n", col);
             pos++; // If CRLF skip the next character and push crlf token
-          } else if (c === '\n') {
+          } else if (c === "\n") {
             // If just a LF newline and not part of CRLF newline we can just
             // push punctuation as usual
             pushToken(Punctuation[c], c, col);
@@ -296,12 +311,13 @@ module.exports = function(css, tabSize) {
 
           ln++; // Go to next line
           col = 0; // Reset the column count
-        } else if (c !== '\r' && c !== '\n') {
+        } else if (c !== "\r" && c !== "\n") {
           // Handle all other punctuation and add to list of tokens
           pushToken(Punctuation[c], c, col);
-        }// Go to next line
-        if (c === ')') urlMode = false; // Exit url mode
-        else if (c === '\t' && tabSize > 1) col += (tabSize - 1);
+        } // Go to next line
+        if (c === ")") urlMode = false;
+        // Exit url mode
+        else if (c === "\t" && tabSize > 1) col += tabSize - 1;
       }
 
       // If current character is a decimal digit:

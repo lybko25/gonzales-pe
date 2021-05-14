@@ -328,8 +328,7 @@ function newNode(type, content, line, column, end) {
 function checkAny(i) {
   let l;
 
-  if ((l = checkInterpolationJs(i))) tokens[i].any_child = 0;
-  else if ((l = checkBrackets(i))) tokens[i].any_child = 1;
+  if ((l = checkBrackets(i))) tokens[i].any_child = 1;
   else if ((l = checkParentheses(i))) tokens[i].any_child = 2;
   else if ((l = checkString(i))) tokens[i].any_child = 3;
   else if ((l = checkVariablesList(i))) tokens[i].any_child = 4;
@@ -362,7 +361,6 @@ function checkAny(i) {
 function getAny() {
   const childType = tokens[pos].any_child;
 
-  if (childType === 0) return getInterpolationJs();
   if (childType === 1) return getBrackets();
   if (childType === 2) return getParentheses();
   if (childType === 3) return getString();
@@ -455,8 +453,7 @@ function getArguments() {
 function checkArgument(i) {
   let l;
 
-  if ((l = checkInterpolationJs(i))) tokens[i].argument_child = 27;
-  else if ((l = checkBrackets(i))) tokens[i].argument_child = 1;
+  if ((l = checkBrackets(i))) tokens[i].argument_child = 1;
   else if ((l = checkParentheses(i))) tokens[i].argument_child = 2;
   else if ((l = checkSingleValueDeclaration(i))) tokens[i].argument_child = 3;
   else if ((l = checkFunctionsList(i))) tokens[i].argument_child = 4;
@@ -518,7 +515,6 @@ function getArgument() {
   if (childType === 24) return getGlobal();
   if (childType === 25) return getDefault();
   if (childType === 26) return getOptional();
-  if (childType === 27) return getInterpolationJs();
 }
 
 /**
@@ -1379,7 +1375,6 @@ function _checkCondition(i) {
     checkVariable(i) ||
     checkNumber(i) ||
     checkInterpolation(i) ||
-    checkInterpolationJs(i) ||
     checkIdent(i) ||
     checkOperator(i) ||
     checkCombinator(i) ||
@@ -1421,7 +1416,6 @@ function _getCondition() {
   if (checkVariable(pos)) return getVariable();
   if (checkNumber(pos)) return getNumber();
   if (checkInterpolation(pos)) return getInterpolation();
-  if (checkInterpolationJs(pos)) return getInterpolationJs();
   if (checkIdent(pos)) return getIdent();
   if (checkOperator(pos)) return getOperator();
   if (checkCombinator(pos)) return getCombinator();
@@ -1945,11 +1939,6 @@ function checkIdent(i) {
     return i - start;
   }
 
-  if (checkInterpolationJs(i)) {
-    tokens[start].ident_last = i - 1;
-    return i - start;
-  }
-
   if (
     tokens[i].type === TokenType.LowLine ||
     tokens[i].type === TokenType.Identifier
@@ -2018,11 +2007,7 @@ function checkIdentOrInterpolation(i) {
   let prevIsInterpolation = false;
 
   while (i < tokensLength) {
-    if ((l = checkInterpolationJs(i))) {
-      tokens[i].ii_type = 0;
-      i += l;
-      prevIsInterpolation = true;
-    } else if ((l = checkInterpolation(i))) {
+    if ((l = checkInterpolation(i))) {
       tokens[i].ii_type = 1;
       i += l;
       prevIsInterpolation = true;
@@ -2046,9 +2031,7 @@ function getIdentOrInterpolation() {
   while (pos < tokensLength) {
     const tokenType = tokens[pos].ii_type;
 
-    if (tokenType === 0) {
-      content.push(getInterpolationJs());
-    } else if (tokenType === 1) {
+    if (tokenType === 1) {
       content.push(getInterpolation());
     } else if (tokenType === 2 || tokenType === 3) {
       content.push(getIdent());
@@ -2457,21 +2440,11 @@ function checkInterpolationJs(i) {
 
   if (i >= tokensLength) return 0;
 
-  if (
-    tokens[i].type !== TokenType.DollarSign ||
-    !tokens[i + 1] ||
-    tokens[i + 1].type !== TokenType.LeftCurlyBracket
-  )
-    return 0;
+  if (tokens[i].type !== TokenType.InterpolationJs) return 0;
 
-  i += 2;
+  i += 1;
 
-  while (tokens[i].type !== TokenType.RightCurlyBracket) {
-    if ((l = checkArgument(i))) i += l;
-    else return 0;
-  }
-
-  return tokens[i].type === TokenType.RightCurlyBracket ? i - start + 1 : 0;
+  return 1;
 }
 
 /**
@@ -2483,24 +2456,10 @@ function getInterpolationJs() {
   const token = tokens[pos];
   const line = token.ln;
   const column = token.col;
-  let content = [];
+  let content = token.value;
 
-  // Skip `#{`:
-  pos += 2;
-
-  while (
-    pos < tokensLength &&
-    tokens[pos].type !== TokenType.RightCurlyBracket
-  ) {
-    const body = getArgument();
-    if (typeof body.content === "string") content.push(body);
-    else content = content.concat(body);
-  }
-
+  pos += 1;
   const end = getLastPosition(content, line, column, 1);
-
-  // Skip `}`:
-  pos++;
 
   return newNode(type, content, line, column, end);
 }
@@ -2682,9 +2641,6 @@ function checkKeyframesSelector(i) {
   } else if ((l = checkInterpolation(i))) {
     i += l;
     tokens[start].keyframesSelectorType = 3;
-  } else if ((l = checkInterpolationJs(i))) {
-    i += l;
-    tokens[start].keyframesSelectorType = 4;
   } else {
     return 0;
   }
@@ -2797,7 +2753,6 @@ function checkLoop(i) {
         checkVariable(i) ||
         checkNumber(i) ||
         checkInterpolation(i) ||
-        checkInterpolationJs(i) ||
         checkIdent(i) ||
         checkSC(i) ||
         checkOperator(i) ||
@@ -3315,10 +3270,7 @@ function checkNumberOrInterpolation(i) {
   let l;
 
   while (i < tokensLength) {
-    if (
-      (l = checkInterpolation(i) || checkInterpolationJs(i) || checkNumber(i))
-    )
-      i += l;
+    if ((l = checkInterpolation(i) || checkNumber(i))) i += l;
     else break;
   }
 
@@ -3334,7 +3286,6 @@ function getNumberOrInterpolation() {
 
   while (pos < tokensLength) {
     if (checkInterpolation(pos)) content.push(getInterpolation());
-    else if (checkInterpolationJs(pos)) content.push(getInterpolationJs());
     else if (checkNumber(pos)) content.push(getNumber());
     else break;
   }
@@ -4090,8 +4041,6 @@ function checkPseudoClass4(i) {
 
   if ((l = checkInterpolation(i))) i += l;
 
-  if ((l = checkInterpolationJs(i))) i += l;
-
   if (tokens[i].type === TokenType.DecimalNumber) i++;
 
   if (tokens[i].value === "n") i++;
@@ -4130,7 +4079,6 @@ function getPseudoClass4() {
 
   if (checkUnary(pos)) value.push(getUnary());
   if (checkInterpolation(pos)) value.push(getInterpolation());
-  if (checkInterpolationJs(pos)) value.push(getInterpolationJs());
   if (checkNumber(pos)) value.push(getNumber());
   if (checkIdent(pos)) value.push(getIdent());
 
@@ -4893,6 +4841,7 @@ function checkUriRawCharacters(i) {
       case TokenType.VerticalLine:
       case TokenType.RightCurlyBracket:
       case TokenType.Tilde:
+      case TokenType.Backtick:
         i += 1;
         break;
 
@@ -4902,6 +4851,42 @@ function checkUriRawCharacters(i) {
   }
 
   return i - start;
+}
+
+function checkBacktick(i) {
+  return tokens[i].type === TokenType.Backtick ? 1 : 0;
+}
+
+function getBacktick() {
+  const startPos = pos;
+  const type = NodeType.BacktickType;
+  const token = tokens[startPos];
+  const line = token.ln;
+  const column = token.col;
+  let content = [];
+  let l;
+
+  content = "`";
+
+  return newNode(type, content, line, column);
+}
+
+function checkFullStop(i) {
+  return tokens[i].type === TokenType.FullStop ? 1 : 0;
+}
+
+function getFullStop() {
+  const startPos = pos;
+  const type = NodeType.FullStopType;
+  const token = tokens[startPos];
+  const line = token.ln;
+  const column = token.col;
+  let content = [];
+  let l;
+
+  content = ".";
+
+  return newNode(type, content, line, column);
 }
 
 /**
@@ -4938,12 +4923,7 @@ function getUriRaw() {
   let l;
 
   while (pos < tokens[startPos].uri_raw_end) {
-    if (
-      checkInterpolationJs(pos) ||
-      checkInterpolation(pos) ||
-      checkVariable(pos)
-    )
-      break;
+    if (checkInterpolation(pos) || checkVariable(pos)) break;
     else if ((l = checkUriRawCharacters(pos))) pos += l;
     else break;
   }
@@ -4969,10 +4949,7 @@ function checkUri1(i) {
   if ((l = checkSC(i))) i += l;
 
   while (i < tokensLength) {
-    if (
-      (l = checkInterpolationJs(i) || checkInterpolation(i) || checkUriRaw(i))
-    )
-      i += l;
+    if ((l = checkInterpolation(i) || checkUriRaw(i))) i += l;
     else break;
   }
 
@@ -4999,7 +4976,6 @@ function getUri1() {
 
   while (pos < tokens[startPos].uri_end) {
     if (checkInterpolation(pos)) content.push(getInterpolation());
-    else if (checkInterpolationJs(pos)) content.push(getInterpolationJs());
     else if (checkUriRaw(pos)) content.push(getUriRaw());
     else break;
   }
@@ -5120,8 +5096,7 @@ function getValue() {
 function _checkValue(i) {
   let l;
 
-  if ((l = checkInterpolationJs(i))) tokens[i].value_child = 13;
-  else if ((l = checkInterpolation(i))) tokens[i].value_child = 1;
+  if ((l = checkInterpolation(i))) tokens[i].value_child = 1;
   else if ((l = checkVariable(i))) tokens[i].value_child = 2;
   else if ((l = checkVhash(i))) tokens[i].value_child = 3;
   else if ((l = checkBlock(i))) tokens[i].value_child = 4;
@@ -5623,8 +5598,7 @@ function checkCompoundSelector2(i) {
       checkAttributeSelector(i) ||
       checkPseudo(i) ||
       checkPlaceholder(i) ||
-      checkInterpolation(i) ||
-      checkInterpolationJs(i);
+      checkInterpolation(i);
 
     if (l) i += l;
     else break;
@@ -5649,7 +5623,6 @@ function getCompoundSelector2() {
     else if (checkPseudo(pos)) sequence.push(getPseudo());
     else if (checkPlaceholder(pos)) sequence.push(getPlaceholder());
     else if (checkInterpolation(pos)) sequence.push(getInterpolation());
-    else if (checkInterpolationJs(pos)) sequence.push(getInterpolationJs());
     else break;
   }
 
